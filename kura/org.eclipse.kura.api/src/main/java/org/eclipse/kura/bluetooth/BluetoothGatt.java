@@ -122,6 +122,7 @@ public interface BluetoothGatt {
      * Get security level.
      *
      * @throws KuraException
+     * @since {@link org.eclipse.kura.bluetooth} 1.4.0
      */
     public BluetoothGattSecurityLevel getSecurityLevel() throws KuraException;
 
@@ -130,6 +131,7 @@ public interface BluetoothGatt {
      *
      * @param level
      *            Security Level
+     * @since {@link org.eclipse.kura.bluetooth} 1.4.0
      */
     public void setSecurityLevel(BluetoothGattSecurityLevel level);
 }

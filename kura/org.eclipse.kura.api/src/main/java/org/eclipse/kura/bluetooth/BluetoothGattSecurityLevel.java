@@ -1,5 +1,10 @@
 package org.eclipse.kura.bluetooth;
 
+/**
+ * Security levels.
+ *
+ * @since {@link org.eclipse.kura.bluetooth} 1.4.0
+ */
 public enum BluetoothGattSecurityLevel {
 
     LOW,
