@@ -11,76 +11,94 @@
  *******************************************************************************/
 package org.eclipse.kura.demo.heater;
 
+import static java.util.Objects.nonNull;
+
 import java.util.Date;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.kura.KuraException;
 import org.eclipse.kura.cloud.CloudClient;
 import org.eclipse.kura.cloud.CloudClientListener;
 import org.eclipse.kura.cloud.CloudService;
 import org.eclipse.kura.configuration.ConfigurableComponent;
 import org.eclipse.kura.message.KuraPayload;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.Constants;
+import org.osgi.framework.Filter;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 import org.osgi.service.component.ComponentContext;
-import org.osgi.service.component.ComponentException;
+import org.osgi.util.tracker.ServiceTracker;
+import org.osgi.util.tracker.ServiceTrackerCustomizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Heater implements ConfigurableComponent, CloudClientListener {
 
-    private static final Logger s_logger = LoggerFactory.getLogger(Heater.class);
+    /**
+     * Inner class defined to track the CloudServices as they get added, modified or removed.
+     * Specific methods can refresh the cloudService definition and setup again the Cloud Client.
+     *
+     */
+    private final class CloudPublisherServiceTrackerCustomizer
+            implements ServiceTrackerCustomizer<CloudService, CloudService> {
 
-    // Cloud Application identifier
-    private static final String APP_ID = "heater";
+        @Override
+        public CloudService addingService(final ServiceReference<CloudService> reference) {
+            Heater.this.cloudService = Heater.this.bundleContext.getService(reference);
+            try {
+                // recreate the Cloud Client
+                setupCloudClient();
+            } catch (final KuraException e) {
+                logger.error("Cloud Client setup failed!", e);
+            }
+            return Heater.this.cloudService;
+        }
 
-    // Publishing Property Names
-    private static final String MODE_PROP_NAME = "mode";
-    private static final String MODE_PROP_PROGRAM = "Program";
-    private static final String MODE_PROP_MANUAL = "Manual";
-    private static final String MODE_PROP_VACATION = "Vacation";
+        @Override
+        public void modifiedService(final ServiceReference<CloudService> reference, final CloudService service) {
+            Heater.this.cloudService = Heater.this.bundleContext.getService(reference);
+            try {
+                // recreate the Cloud Client
+                setupCloudClient();
+            } catch (final KuraException e) {
+                logger.error("Cloud Client setup failed!", e);
+            }
+        }
 
-    private static final String PROGRAM_SETPOINT_NAME = "program.setPoint";
-    private static final String MANUAL_SETPOINT_NAME = "manual.setPoint";
+        @Override
+        public void removedService(final ServiceReference<CloudService> reference, final CloudService service) {
+            Heater.this.cloudService = null;
+        }
+    }
 
-    private static final String TEMP_INITIAL_PROP_NAME = "temperature.initial";
-    private static final String TEMP_INCREMENT_PROP_NAME = "temperature.increment";
+    private static final Logger logger = LoggerFactory.getLogger(Heater.class);
 
-    private static final String PUBLISH_RATE_PROP_NAME = "publish.rate";
-    private static final String PUBLISH_TOPIC_PROP_NAME = "publish.semanticTopic";
-    private static final String PUBLISH_QOS_PROP_NAME = "publish.qos";
-    private static final String PUBLISH_RETAIN_PROP_NAME = "publish.retain";
+    private ServiceTrackerCustomizer<CloudService, CloudService> cloudServiceTrackerCustomizer;
+    private ServiceTracker<CloudService, CloudService> cloudServiceTracker;
+    private CloudService cloudService;
+    private CloudClient cloudClient;
 
-    private CloudService m_cloudService;
-    private CloudClient m_cloudClient;
+    private final ScheduledExecutorService worker;
+    private ScheduledFuture<?> handle;
 
-    private final ScheduledExecutorService m_worker;
-    private ScheduledFuture<?> m_handle;
+    private float temperature;
+    private final Random random;
 
-    private float m_temperature;
-    private Map<String, Object> m_properties;
-    private final Random m_random;
+    private BundleContext bundleContext;
 
-    // ----------------------------------------------------------------
-    //
-    // Dependencies
-    //
-    // ----------------------------------------------------------------
+    private HeaterOptions heaterOptions;
 
     public Heater() {
         super();
-        this.m_random = new Random();
-        this.m_worker = Executors.newSingleThreadScheduledExecutor();
-    }
-
-    public void setCloudService(CloudService cloudService) {
-        this.m_cloudService = cloudService;
-    }
-
-    public void unsetCloudService(CloudService cloudService) {
-        this.m_cloudService = null;
+        this.random = new Random();
+        this.worker = Executors.newSingleThreadScheduledExecutor();
     }
 
     // ----------------------------------------------------------------
@@ -90,56 +108,59 @@ public class Heater implements ConfigurableComponent, CloudClientListener {
     // ----------------------------------------------------------------
 
     protected void activate(ComponentContext componentContext, Map<String, Object> properties) {
-        s_logger.info("Activating Heater...");
+        logger.info("Activating Heater...");
 
-        this.m_properties = properties;
-        for (String s : properties.keySet()) {
-            s_logger.info("Activate - " + s + ": " + properties.get(s));
+        this.heaterOptions = new HeaterOptions(properties);
+        for (Entry<String, Object> entry : properties.entrySet()) {
+            logger.info("Activate - {} : {}", entry.getKey(), entry.getValue());
         }
 
-        // get the mqtt client for this application
-        try {
+        this.bundleContext = componentContext.getBundleContext();
 
-            // Acquire a Cloud Application Client for this Application
-            s_logger.info("Getting CloudClient for {}...", APP_ID);
-            this.m_cloudClient = this.m_cloudService.newCloudClient(APP_ID);
-            this.m_cloudClient.addCloudClientListener(this);
+        this.cloudServiceTrackerCustomizer = new CloudPublisherServiceTrackerCustomizer();
+        initCloudServiceTracking();
 
-            // Don't subscribe because these are handled by the default
-            // subscriptions and we don't want to get messages twice
-            doUpdate(false);
-        } catch (Exception e) {
-            s_logger.error("Error during component activation", e);
-            throw new ComponentException(e);
-        }
-        s_logger.info("Activating Heater... Done.");
+        // Don't subscribe because these are handled by the default
+        // subscriptions and we don't want to get messages twice
+        doUpdate(false);
+        logger.info("Activating Heater... Done.");
     }
 
     protected void deactivate(ComponentContext componentContext) {
-        s_logger.debug("Deactivating Heater...");
+        logger.debug("Deactivating Heater...");
 
         // shutting down the worker and cleaning up the properties
-        this.m_worker.shutdown();
+        this.worker.shutdown();
 
         // Releasing the CloudApplicationClient
-        s_logger.info("Releasing CloudApplicationClient for {}...", APP_ID);
-        this.m_cloudClient.release();
+        logger.info("Releasing CloudApplicationClient for {}...", this.heaterOptions.getAppId());
+        // close the client
+        closeCloudClient();
 
-        s_logger.debug("Deactivating Heater... Done.");
+        if (nonNull(this.cloudServiceTracker)) {
+            this.cloudServiceTracker.close();
+        }
+
+        logger.debug("Deactivating Heater... Done.");
     }
 
     public void updated(Map<String, Object> properties) {
-        s_logger.info("Updated Heater...");
+        logger.info("Updated Heater...");
 
         // store the properties received
-        this.m_properties = properties;
-        for (String s : properties.keySet()) {
-            s_logger.info("Update - " + s + ": " + properties.get(s));
+        this.heaterOptions = new HeaterOptions(properties);
+        for (Entry<String, Object> entry : properties.entrySet()) {
+            logger.info("Update - {} : {}", entry.getKey(), entry.getValue());
         }
+
+        if (nonNull(this.cloudServiceTracker)) {
+            this.cloudServiceTracker.close();
+        }
+        initCloudServiceTracking();
 
         // try to kick off a new job
         doUpdate(true);
-        s_logger.info("Updated Heater... Done.");
+        logger.info("Updated Heater... Done.");
     }
 
     // ----------------------------------------------------------------
@@ -150,38 +171,32 @@ public class Heater implements ConfigurableComponent, CloudClientListener {
 
     @Override
     public void onControlMessageArrived(String deviceId, String appTopic, KuraPayload msg, int qos, boolean retain) {
-        // TODO Auto-generated method stub
-
+        logger.info("Control message arrived on assetId: {} and semantic topic: {}", deviceId, appTopic);
     }
 
     @Override
     public void onMessageArrived(String deviceId, String appTopic, KuraPayload msg, int qos, boolean retain) {
-        // TODO Auto-generated method stub
-
+        logger.info("Message arrived on assetId: {} and semantic topic: {}", deviceId, appTopic);
     }
 
     @Override
     public void onConnectionLost() {
-        // TODO Auto-generated method stub
-
+        logger.warn("Connection lost!");
     }
 
     @Override
     public void onConnectionEstablished() {
-        // TODO Auto-generated method stub
-
+        logger.info("Connection established");
     }
 
     @Override
     public void onMessageConfirmed(int messageId, String appTopic) {
-        // TODO Auto-generated method stub
-
+        logger.info("Confirmed message with ID: {} on application topic: {}", messageId, appTopic);
     }
 
     @Override
     public void onMessagePublished(int messageId, String appTopic) {
-        // TODO Auto-generated method stub
-
+        logger.info("Published message with ID: {} on application topic: {}", messageId, appTopic);
     }
 
     // ----------------------------------------------------------------
@@ -195,25 +210,18 @@ public class Heater implements ConfigurableComponent, CloudClientListener {
      */
     private void doUpdate(boolean onUpdate) {
         // cancel a current worker handle if one if active
-        if (this.m_handle != null) {
-            this.m_handle.cancel(true);
-        }
-
-        if (!this.m_properties.containsKey(TEMP_INITIAL_PROP_NAME)
-                || !this.m_properties.containsKey(PUBLISH_RATE_PROP_NAME)) {
-            s_logger.info(
-                    "Update Heater - Ignore as properties do not contain TEMP_INITIAL_PROP_NAME and PUBLISH_RATE_PROP_NAME.");
-            return;
+        if (this.handle != null) {
+            this.handle.cancel(true);
         }
 
         // reset the temperature to the initial value
         if (!onUpdate) {
-            this.m_temperature = (Float) this.m_properties.get(TEMP_INITIAL_PROP_NAME);
+            this.temperature = this.heaterOptions.getTempInitial();
         }
 
         // schedule a new worker based on the properties of the service
-        int pubrate = (Integer) this.m_properties.get(PUBLISH_RATE_PROP_NAME);
-        this.m_handle = this.m_worker.scheduleAtFixedRate(new Runnable() {
+        int pubrate = this.heaterOptions.getPublishRate();
+        this.handle = this.worker.scheduleAtFixedRate(new Runnable() {
 
             @Override
             public void run() {
@@ -228,25 +236,25 @@ public class Heater implements ConfigurableComponent, CloudClientListener {
      */
     private void doPublish() {
         // fetch the publishing configuration from the publishing properties
-        String topic = (String) this.m_properties.get(PUBLISH_TOPIC_PROP_NAME);
-        Integer qos = (Integer) this.m_properties.get(PUBLISH_QOS_PROP_NAME);
-        Boolean retain = (Boolean) this.m_properties.get(PUBLISH_RETAIN_PROP_NAME);
-        String mode = (String) this.m_properties.get(MODE_PROP_NAME);
+        String topic = this.heaterOptions.getPublishSemanticTopic();
+        Integer qos = this.heaterOptions.getPublishQos();
+        Boolean retain = this.heaterOptions.getPublishRetain();
+        String mode = this.heaterOptions.getMode();
 
         // Increment the simulated temperature value
         float setPoint = 0;
-        float tempIncr = (Float) this.m_properties.get(TEMP_INCREMENT_PROP_NAME);
-        if (MODE_PROP_PROGRAM.equals(mode)) {
-            setPoint = (Float) this.m_properties.get(PROGRAM_SETPOINT_NAME);
-        } else if (MODE_PROP_MANUAL.equals(mode)) {
-            setPoint = (Float) this.m_properties.get(MANUAL_SETPOINT_NAME);
-        } else if (MODE_PROP_VACATION.equals(mode)) {
+        float tempIncr = this.heaterOptions.getTempIncrement();
+        if (this.heaterOptions.getPropertiesProgramMode().equals(mode)) {
+            setPoint = this.heaterOptions.getProgramSetPoint();
+        } else if (this.heaterOptions.getPropertiesManualMode().equals(mode)) {
+            setPoint = this.heaterOptions.getManualSetPoint();
+        } else if (this.heaterOptions.getPropertiesVacationMode().equals(mode)) {
             setPoint = 6.0F;
         }
-        if (this.m_temperature + tempIncr < setPoint) {
-            this.m_temperature += tempIncr;
+        if (this.temperature + tempIncr < setPoint) {
+            this.temperature += tempIncr;
         } else {
-            this.m_temperature -= 4 * tempIncr;
+            this.temperature -= 4 * tempIncr;
         }
 
         // Allocate a new payload
@@ -256,12 +264,12 @@ public class Heater implements ConfigurableComponent, CloudClientListener {
         payload.setTimestamp(new Date());
 
         // Add the temperature as a metric to the payload
-        payload.addMetric("temperatureInternal", this.m_temperature);
+        payload.addMetric("temperatureInternal", this.temperature);
         payload.addMetric("temperatureExternal", 5.0F);
         payload.addMetric("temperatureExhaust", 30.0F);
 
-        int code = this.m_random.nextInt();
-        if (this.m_random.nextInt() % 5 == 0) {
+        int code = this.random.nextInt();
+        if (this.random.nextInt() % 5 == 0) {
             payload.addMetric("errorCode", code);
         } else {
             payload.addMetric("errorCode", 0);
@@ -269,10 +277,42 @@ public class Heater implements ConfigurableComponent, CloudClientListener {
 
         // Publish the message
         try {
-            this.m_cloudClient.publish(topic, payload, qos, retain);
-            s_logger.info("Published to {} message: {}", topic, payload);
+            if (nonNull(this.cloudService) && nonNull(this.cloudClient)) {
+                this.cloudClient.publish(topic, payload, qos, retain);
+                logger.info("Published to {} message: {}", topic, payload);
+            }
         } catch (Exception e) {
-            s_logger.error("Cannot publish topic: " + topic, e);
+            logger.error("Cannot publish topic: " + topic, e);
         }
+    }
+
+    private void initCloudServiceTracking() {
+        String selectedCloudServicePid = this.heaterOptions.getCloudServicePid();
+        String filterString = String.format("(&(%s=%s)(kura.service.pid=%s))", Constants.OBJECTCLASS,
+                CloudService.class.getName(), selectedCloudServicePid);
+        Filter filter = null;
+        try {
+            filter = this.bundleContext.createFilter(filterString);
+        } catch (InvalidSyntaxException e) {
+            logger.error("Filter setup exception ", e);
+        }
+        this.cloudServiceTracker = new ServiceTracker<>(this.bundleContext, filter, this.cloudServiceTrackerCustomizer);
+        this.cloudServiceTracker.open();
+    }
+
+    private void closeCloudClient() {
+        if (nonNull(this.cloudClient)) {
+            this.cloudClient.removeCloudClientListener(this);
+            this.cloudClient.release();
+            this.cloudClient = null;
+        }
+    }
+
+    private void setupCloudClient() throws KuraException {
+        closeCloudClient();
+        // create the new CloudClient for the specified application
+        final String appId = this.heaterOptions.getAppId();
+        this.cloudClient = this.cloudService.newCloudClient(appId);
+        this.cloudClient.addCloudClientListener(this);
     }
 }
