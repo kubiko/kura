@@ -75,6 +75,11 @@ public class LinuxNamed {
             s_procString = "named -u named -t";
             s_logFileName = "/var/named/data/named.run";
             s_rfc1912ZonesFilename = "/etc/named.rfc1912.zones";
+        } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
+            s_persistentConfigFileName = "/snap/kura/current/etc/bind/named.conf";
+            s_procString = "/snap/kura/current/usr/sbin/named";
+            s_logFileName = "/var/snap/kura/current/log/named.log";
+            s_rfc1912ZonesFilename = "/snap/kura/current/etc/bind/named.rfc1912.zones";
         } else {
             s_persistentConfigFileName = "/etc/named.conf";
             s_procString = "named -u named -t";
@@ -260,6 +265,8 @@ public class LinuxNamed {
                     || OS_VERSION.equals(KuraConstants.Reliagate_20_26.getImageName() + "_"
                             + KuraConstants.Reliagate_20_26.getImageVersion())) {
                 result = LinuxProcessUtil.start("/bin/systemctl stop named");
+            } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
+                    result = LinuxProcessUtil.start("/snap/kura/current/etc/init.d/bind9 stop");
             } else {
                 result = LinuxProcessUtil.start("/etc/init.d/named stop");
             }
