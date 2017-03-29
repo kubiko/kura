@@ -44,7 +44,7 @@ public class LinuxFirewall {
 
     private static final String IP_FORWARD_FILE_NAME = "/proc/sys/net/ipv4/ip_forward";
     private static final String FIREWALL_CONFIG_FILE_NAME = "/etc/sysconfig/iptables";
-    private static final String CUSTOM_FIREWALL_SCRIPT_NAME = "/etc/init.d/firewall_cust";
+    private static final String CUSTOM_FIREWALL_SCRIPT_NAME = "/snap/kura/current/etc/init.d/firewall_cust";
 
     private LinkedHashSet<LocalRule> m_localRules;
     private LinkedHashSet<PortForwardRule> m_portForwardRules;
