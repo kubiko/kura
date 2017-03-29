@@ -25,7 +25,8 @@ public enum KuraConstants {
     Reliagate_10_11("yocto", "1.2.1", "reliagate-10-11"),
     Reliagate_20_25("yocto", "1.2.1", "reliagate-20-25"),
     Reliagate_20_26("rhel", "7.3", "reliagate-20-26"),
-    Fedora_Pi("fedora", "2x", "raspberry-pi");
+    Fedora_Pi("fedora", "2x", "raspberry-pi"),
+    UbuntuCore("ubuntucore", "16", "core" );
 
     private String m_imageName;
     private String m_imageVersion;

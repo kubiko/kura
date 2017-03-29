@@ -218,6 +218,8 @@ public class LinuxNamed {
                     || OS_VERSION.equals(KuraConstants.Reliagate_20_26.getImageName() + "_"
                             + KuraConstants.Reliagate_20_26.getImageVersion())) {
                 result = LinuxProcessUtil.start("/bin/systemctl start named");
+            } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
+                  result = LinuxProcessUtil.start("/snap/kura/current/etc/init.d/bind9 start");
             } else {
                 s_logger.info("Linux named enable fallback");
                 result = LinuxProcessUtil.start("/etc/init.d/named start");
