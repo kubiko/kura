@@ -1319,6 +1319,11 @@ public class NetworkAdminServiceImpl implements NetworkAdminService, EventHandle
             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", "/etc/udhcpd-usb0.conf"));
             rollbackItems
                     .add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-wlan0.conf", "/etc/udhcpd-wlan0.conf"));
+        } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
+             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", "/var/snap/kura/common/etc/hostapd.conf"));
+             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", "/var/snap/kura/common/etc/dhcpd-eth0.conf"));
+             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-wlan0.conf", "/var/snap/kura/common/etc/dhcpd-wlan0.conf"));
+        }
         } else {
             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", "/etc/hostapd.conf"));
             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", "/etc/dhcpd-eth0.conf"));
@@ -1329,6 +1334,7 @@ public class NetworkAdminServiceImpl implements NetworkAdminService, EventHandle
                 .equals(KuraConstants.Mini_Gateway.getImageName() + "_" + KuraConstants.Mini_Gateway.getImageVersion())
                 || OS_VERSION.equals(KuraConstants.Raspberry_Pi.getImageName())
                 || OS_VERSION.equals(KuraConstants.BeagleBone.getImageName())
+                || OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())
                 || OS_VERSION.equals(
                         KuraConstants.Intel_Edison.getImageName() + "_" + KuraConstants.Intel_Edison.getImageVersion()
                                 + "_" + KuraConstants.Intel_Edison.getTargetName())) {
