@@ -1320,9 +1320,12 @@ public class NetworkAdminServiceImpl implements NetworkAdminService, EventHandle
             rollbackItems
                     .add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-wlan0.conf", "/etc/udhcpd-wlan0.conf"));
         } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
-             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", "/var/snap/kura/common/etc/hostapd.conf"));
-             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", "/var/snap/kura/common/etc/dhcpd-eth0.conf"));
-             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-wlan0.conf", "/var/snap/kura/common/etc/dhcpd-wlan0.conf"));
+             String dstEtcDirectory = Paths.get(dstDataDirectory + "../").toRealPath();
+             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", dstEtcDirectory + "/hostapd.conf"));
+             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", dstEtcDirectory + "/dhcpd-eth0.conf"));
+             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-wlan0.conf", dstEtcDirectory + "/dhcpd-wlan0.conf"));
+             String snapDir = Paths.get(this.m_systemService.getKuraHome() + "../").toRealPath();
+             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/firewall", snapDir + "/etc/init.d/firewall"));
         } else {
             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", "/etc/hostapd.conf"));
             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", "/etc/dhcpd-eth0.conf"));

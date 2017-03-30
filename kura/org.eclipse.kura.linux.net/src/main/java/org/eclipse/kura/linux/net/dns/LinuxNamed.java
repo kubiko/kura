@@ -76,10 +76,12 @@ public class LinuxNamed {
             s_logFileName = "/var/named/data/named.run";
             s_rfc1912ZonesFilename = "/etc/named.rfc1912.zones";
         } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
-            s_persistentConfigFileName = "/snap/kura/current/etc/bind/named.conf";
-            s_procString = "/snap/kura/current/usr/sbin/named";
+            String snapDir = Paths.get(System.getProperty("kura.home") + "../").toRealPath();
+            String snapCommon = Paths.get(System.getProperty("kura.data.dir") + "../").toRealPath();
+            s_persistentConfigFileName = snapCommon + "/etc/bind/named.conf";
+            s_procString = snapDir + "/usr/sbin/named";
             s_logFileName = "/var/snap/kura/current/log/named.log";
-            s_rfc1912ZonesFilename = "/snap/kura/current/etc/bind/named.rfc1912.zones";
+            s_rfc1912ZonesFilename = snapCommon + "/etc/bind/named.rfc1912.zones";
         } else {
             s_persistentConfigFileName = "/etc/named.conf";
             s_procString = "named -u named -t";

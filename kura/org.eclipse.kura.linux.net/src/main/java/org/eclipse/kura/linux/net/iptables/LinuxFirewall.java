@@ -41,10 +41,18 @@ public class LinuxFirewall {
     private static LinuxFirewall s_linuxFirewall;
 
     private static Object s_lock = new Object();
-
+    private static final String OS_VERSION = System.getProperty("kura.os.version");
+    private static final String KURA_HOME = System.getProperty("kura.home");
     private static final String IP_FORWARD_FILE_NAME = "/proc/sys/net/ipv4/ip_forward";
-    private static final String FIREWALL_CONFIG_FILE_NAME = "/snap/kura/current/etc/sysconfig/iptables";
-    private static final String CUSTOM_FIREWALL_SCRIPT_NAME = "/snap/kura/current/etc/init.d/firewall_cust";
+    if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
+        // TODO: make this dynamic based on underlying OS
+        String snapDir = Paths.get(KURA_HOME + "../").toRealPath();
+        private static final String FIREWALL_CONFIG_FILE_NAME = snapDir + "/etc/sysconfig/iptables";
+        private static final String CUSTOM_FIREWALL_SCRIPT_NAME = snapDir + "/etc/init.d/firewall_cust";
+    else {
+        private static final String FIREWALL_CONFIG_FILE_NAME = "/etc/sysconfig/iptables";
+        private static final String CUSTOM_FIREWALL_SCRIPT_NAME = "/etc/init.d/firewall_cust";
+    }
 
     private LinkedHashSet<LocalRule> m_localRules;
     private LinkedHashSet<PortForwardRule> m_portForwardRules;
