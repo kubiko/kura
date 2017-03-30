@@ -1323,7 +1323,6 @@ public class NetworkAdminServiceImpl implements NetworkAdminService, EventHandle
              rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", "/var/snap/kura/common/etc/hostapd.conf"));
              rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", "/var/snap/kura/common/etc/dhcpd-eth0.conf"));
              rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-wlan0.conf", "/var/snap/kura/common/etc/dhcpd-wlan0.conf"));
-        }
         } else {
             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", "/etc/hostapd.conf"));
             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", "/etc/dhcpd-eth0.conf"));
