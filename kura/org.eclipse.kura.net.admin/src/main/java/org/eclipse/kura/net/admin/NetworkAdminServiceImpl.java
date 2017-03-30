@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Dictionary;
 import java.util.EnumSet;
@@ -1320,11 +1321,11 @@ public class NetworkAdminServiceImpl implements NetworkAdminService, EventHandle
             rollbackItems
                     .add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-wlan0.conf", "/etc/udhcpd-wlan0.conf"));
         } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
-             String dstEtcDirectory = Paths.get(dstDataDirectory + "../").toRealPath();
+             String dstEtcDirectory = Paths.get(dstDataDirectory + "../").toAbsolutePath().toString();
              rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", dstEtcDirectory + "/hostapd.conf"));
              rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-eth0.conf", dstEtcDirectory + "/dhcpd-eth0.conf"));
              rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/dhcpd-wlan0.conf", dstEtcDirectory + "/dhcpd-wlan0.conf"));
-             String snapDir = Paths.get(this.m_systemService.getKuraHome() + "../").toRealPath();
+             String snapDir = Paths.get(this.m_systemService.getKuraHome() + "../").toAbsolutePath().toString();
              rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/firewall", snapDir + "/etc/init.d/firewall"));
         } else {
             rollbackItems.add(new NetworkRollbackItem(srcDataDirectory + "/hostapd.conf", "/etc/hostapd.conf"));

@@ -14,6 +14,7 @@ package org.eclipse.kura.linux.net.iptables;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -23,6 +24,8 @@ import org.eclipse.kura.KuraErrorCode;
 import org.eclipse.kura.KuraException;
 import org.eclipse.kura.core.util.ProcessUtil;
 import org.eclipse.kura.core.util.SafeProcess;
+import org.eclipse.kura.core.linux.util.LinuxProcessUtil;
+import org.eclipse.kura.linux.net.util.KuraConstants;
 import org.eclipse.kura.net.IP4Address;
 import org.eclipse.kura.net.IPAddress;
 import org.eclipse.kura.net.NetworkPair;
@@ -42,17 +45,10 @@ public class LinuxFirewall {
 
     private static Object s_lock = new Object();
     private static final String OS_VERSION = System.getProperty("kura.os.version");
-    private static final String KURA_HOME = System.getProperty("kura.home");
     private static final String IP_FORWARD_FILE_NAME = "/proc/sys/net/ipv4/ip_forward";
-    if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
-        // TODO: make this dynamic based on underlying OS
-        String snapDir = Paths.get(KURA_HOME + "../").toRealPath();
-        private static final String FIREWALL_CONFIG_FILE_NAME = snapDir + "/etc/sysconfig/iptables";
-        private static final String CUSTOM_FIREWALL_SCRIPT_NAME = snapDir + "/etc/init.d/firewall_cust";
-    else {
-        private static final String FIREWALL_CONFIG_FILE_NAME = "/etc/sysconfig/iptables";
-        private static final String CUSTOM_FIREWALL_SCRIPT_NAME = "/etc/init.d/firewall_cust";
-    }
+    private static final String FIREWALL_CONFIG_FILE_NAME = "/etc/sysconfig/iptables";
+    private static final String CUSTOM_FIREWALL_SCRIPT_NAME = "/etc/init.d/firewall_cust";
+    private static final String SNAP_DIR = Paths.get(System.getProperty("kura.home") + "../").toAbsolutePath().toString();
 
     private LinkedHashSet<LocalRule> m_localRules;
     private LinkedHashSet<PortForwardRule> m_portForwardRules;
@@ -63,7 +59,12 @@ public class LinuxFirewall {
 
     private LinuxFirewall() {
         try {
-            File cfgFile = new File(FIREWALL_CONFIG_FILE_NAME);
+            File cfgFile = null;
+            if ( OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName()) ) {
+                cfgFile = new File(SNAP_DIR + FIREWALL_CONFIG_FILE_NAME);
+            } else {
+                cfgFile = new File(FIREWALL_CONFIG_FILE_NAME);
+            }
             if (!cfgFile.exists()) {
                 IptablesConfig.applyBlockPolicy();
                 IptablesConfig.save();
@@ -509,10 +510,15 @@ public class LinuxFirewall {
     private static void runCustomFirewallScript() throws KuraException {
         SafeProcess proc = null;
         try {
-            File file = new File(CUSTOM_FIREWALL_SCRIPT_NAME);
+            File file = null;
+            if ( OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName()) ) {
+                file = new File(SNAP_DIR + CUSTOM_FIREWALL_SCRIPT_NAME);
+            } else {
+                file = new File(CUSTOM_FIREWALL_SCRIPT_NAME);
+            }
             if (file.exists()) {
-                s_logger.info("Running custom firewall script - {}", CUSTOM_FIREWALL_SCRIPT_NAME);
-                proc = ProcessUtil.exec("sh " + CUSTOM_FIREWALL_SCRIPT_NAME);
+                s_logger.info("Running custom firewall script - {}", file.getPath());
+                proc = ProcessUtil.exec("sh " + file.getPath());
                 proc.waitFor();
             }
         } catch (Exception e) {

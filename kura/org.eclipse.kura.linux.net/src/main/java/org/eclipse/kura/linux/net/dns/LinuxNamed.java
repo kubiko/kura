@@ -12,6 +12,7 @@
  *******************************************************************************/
 package org.eclipse.kura.linux.net.dns;
 
+import java.nio.file.Paths;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -76,8 +77,8 @@ public class LinuxNamed {
             s_logFileName = "/var/named/data/named.run";
             s_rfc1912ZonesFilename = "/etc/named.rfc1912.zones";
         } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
-            String snapDir = Paths.get(System.getProperty("kura.home") + "../").toRealPath();
-            String snapCommon = Paths.get(System.getProperty("kura.data.dir") + "../").toRealPath();
+            String snapDir = Paths.get(System.getProperty("target.device") + "../").toAbsolutePath().toString();
+            String snapCommon = Paths.get(System.getProperty("kura.data.dir") + "../").toAbsolutePath().toString();
             s_persistentConfigFileName = snapCommon + "/etc/bind/named.conf";
             s_procString = snapDir + "/usr/sbin/named";
             s_logFileName = "/var/snap/kura/current/log/named.log";
