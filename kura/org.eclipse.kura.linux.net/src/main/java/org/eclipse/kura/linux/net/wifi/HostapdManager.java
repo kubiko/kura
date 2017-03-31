@@ -11,6 +11,7 @@
  *******************************************************************************/
 package org.eclipse.kura.linux.net.wifi;
 
+import java.nio.file.Paths;
 import java.io.File;
 
 import org.eclipse.kura.KuraException;
@@ -25,8 +26,8 @@ public class HostapdManager {
 
     private static final String OS_VERSION = System.getProperty("kura.os.version");
     private static final String HOSTAPD_EXEC = "hostapd";
-
     private static boolean s_isIntelEdison = false;
+    private static boolean s_isUbuntuCore = false;
 
     static {
         StringBuilder sb = new StringBuilder(KuraConstants.Intel_Edison.getImageName());
@@ -34,6 +35,9 @@ public class HostapdManager {
                 .append(KuraConstants.Intel_Edison.getTargetName());
         if (OS_VERSION.equals(sb.toString())) {
             s_isIntelEdison = true;
+        }
+        if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
+            s_isUbuntuCore = true;
         }
     }
 
@@ -114,6 +118,9 @@ public class HostapdManager {
         StringBuilder sb = new StringBuilder();
         if (s_isIntelEdison) {
             sb.append("/etc/hostapd/hostapd.conf");
+        } else if (s_isUbuntuCore) {
+            String snapCommon = Paths.get(System.getProperty("kura.data.dir") + "/../").toAbsolutePath().toString();
+            sb.append(snapCommon).append("/etc/hostapd-").append(ifaceName).append(".conf");
         } else {
             sb.append("/etc/hostapd-").append(ifaceName).append(".conf");
         }

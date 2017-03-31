@@ -48,7 +48,8 @@ public class LinuxFirewall {
     private static final String IP_FORWARD_FILE_NAME = "/proc/sys/net/ipv4/ip_forward";
     private static final String FIREWALL_CONFIG_FILE_NAME = "/etc/sysconfig/iptables";
     private static final String CUSTOM_FIREWALL_SCRIPT_NAME = "/etc/init.d/firewall_cust";
-    private static final String SNAP_DIR = Paths.get(System.getProperty("kura.home") + "../").toAbsolutePath().toString();
+    private static final String SNAP_DIR = Paths.get(System.getProperty("kura.home") + "/../../").toAbsolutePath().toString();
+    private static final String SNAP_COMMON = Paths.get(System.getProperty("kura.data.dir") + "/..").toAbsolutePath().toString();
 
     private LinkedHashSet<LocalRule> m_localRules;
     private LinkedHashSet<PortForwardRule> m_portForwardRules;
@@ -61,7 +62,7 @@ public class LinuxFirewall {
         try {
             File cfgFile = null;
             if ( OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName()) ) {
-                cfgFile = new File(SNAP_DIR + FIREWALL_CONFIG_FILE_NAME);
+                cfgFile = new File(SNAP_COMMON + FIREWALL_CONFIG_FILE_NAME);
             } else {
                 cfgFile = new File(FIREWALL_CONFIG_FILE_NAME);
             }

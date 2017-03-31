@@ -41,6 +41,10 @@ public class LinuxNamed {
 
     private static final String OS_VERSION = System.getProperty("kura.os.version");
     private static final String TARGET_NAME = System.getProperty("target.device");
+    private static final String SNAP_DIR = Paths.get(System.getProperty("kura.home") + "/../../").toAbsolutePath().toString();
+    private static final String SNAP_DATA = Paths.get(System.getProperty("kura.data.dir") + "/../../current").toAbsolutePath().toString();
+    private static final String SNAP_COMMON = Paths.get(System.getProperty("kura.data.dir") + "/..").toAbsolutePath().toString();
+    private static final boolean IS_UBUNTU_CORE = System.getProperty("kura.os.version").equals(KuraConstants.UbuntuCore.getImageName());
 
     private static LinuxNamed s_linuxNamed = null;
     private static String s_persistentConfigFileName = null;
@@ -77,12 +81,10 @@ public class LinuxNamed {
             s_logFileName = "/var/named/data/named.run";
             s_rfc1912ZonesFilename = "/etc/named.rfc1912.zones";
         } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
-            String snapDir = Paths.get(System.getProperty("target.device") + "../").toAbsolutePath().toString();
-            String snapCommon = Paths.get(System.getProperty("kura.data.dir") + "../").toAbsolutePath().toString();
-            s_persistentConfigFileName = snapCommon + "/etc/bind/named.conf";
-            s_procString = snapDir + "/usr/sbin/named";
-            s_logFileName = "/var/snap/kura/current/log/named.log";
-            s_rfc1912ZonesFilename = snapCommon + "/etc/bind/named.rfc1912.zones";
+            s_persistentConfigFileName = SNAP_COMMON + "/etc/bind/named.conf";
+            s_procString = SNAP_DIR + "/usr/sbin/named";
+            s_logFileName = SNAP_DATA + "/log/named.log";
+            s_rfc1912ZonesFilename = SNAP_COMMON + "/etc/bind/named.rfc1912.zones";
         } else {
             s_persistentConfigFileName = "/etc/named.conf";
             s_procString = "named -u named -t";
@@ -114,7 +116,6 @@ public class LinuxNamed {
         if (configFile.exists()) {
 
             s_logger.debug("initing DNS Server configuration");
-
             try {
                 Set<IP4Address> forwarders = new HashSet<IP4Address>();
                 Set<NetworkPair<IP4Address>> allowedNetworks = new HashSet<NetworkPair<IP4Address>>();
@@ -227,7 +228,7 @@ public class LinuxNamed {
                             + KuraConstants.Reliagate_20_26.getImageVersion())) {
                 result = LinuxProcessUtil.start("/bin/systemctl start named");
             } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
-                  result = LinuxProcessUtil.start("/snap/kura/current/etc/init.d/bind9 start");
+                result = LinuxProcessUtil.start( SNAP_DIR + "/etc/init.d/bind9 start");
             } else {
                 s_logger.info("Linux named enable fallback");
                 result = LinuxProcessUtil.start("/etc/init.d/named start");
@@ -269,7 +270,7 @@ public class LinuxNamed {
                             + KuraConstants.Reliagate_20_26.getImageVersion())) {
                 result = LinuxProcessUtil.start("/bin/systemctl stop named");
             } else if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
-                    result = LinuxProcessUtil.start("/snap/kura/current/etc/init.d/bind9 stop");
+                result = LinuxProcessUtil.start(SNAP_DIR + "/etc/init.d/bind9 stop");
             } else {
                 result = LinuxProcessUtil.start("/etc/init.d/named stop");
             }
@@ -290,10 +291,18 @@ public class LinuxNamed {
 
     public boolean restart() throws KuraException {
         try {
-            if (LinuxProcessUtil.start("/etc/init.d/named restart") == 0) {
-                s_logger.debug("DNS server restarted.");
+            if (OS_VERSION.equals(KuraConstants.UbuntuCore.getImageName())) {
+                if (LinuxProcessUtil.start(SNAP_DIR + "/etc/init.d/named restart") == 0) {
+                    s_logger.debug("DNS server restarted.");
+                } else {
+                    throw new KuraException(KuraErrorCode.INTERNAL_ERROR, "error restarting");
+                }
             } else {
-                throw new KuraException(KuraErrorCode.INTERNAL_ERROR, "error restarting");
+                if (LinuxProcessUtil.start("/etc/init.d/named restart") == 0) {
+                    s_logger.debug("DNS server restarted.");
+                } else {
+                    throw new KuraException(KuraErrorCode.INTERNAL_ERROR, "error restarting");
+                }
             }
         } catch (Exception e) {
             throw new KuraException(KuraErrorCode.INTERNAL_ERROR, e);
@@ -369,7 +378,7 @@ public class LinuxNamed {
     private String getForwardingNamedFile() {
         StringBuilder sb = new StringBuilder().append("// Forwarding and Caching Name Server Configuration\n")
                 .append("options {\n") //
-                .append("\tdirectory \"/var/named\";\n") //
+                .append( IS_UBUNTU_CORE ? "\tdirectory \"" + SNAP_COMMON + "/var/named\";\n" : "\tdirectory \"/var/named\";\n") //
                 .append("\tversion \"not currently available\";\n") //
                 .append("\tforwarders {");
 
@@ -432,10 +441,10 @@ public class LinuxNamed {
                 .append("options {\n") //
                 .append("\tlisten-on port 53 { 127.0.0.1; };\n") //
                 .append("\tlisten-on-v6 port 53 { ::1; };\n") //
-                .append("\tdirectory	\"/var/named\";\n") //
-                .append("\tdump-file	\"/var/named/data/cache_dump.db\";\n") //
-                .append("\tstatistics-file \"/var/named/data/named_stats.txt\";\n") //
-                .append("\tmemstatistics-file \"/var/named/data/named_mem_stats.txt\";\n") //
+                .append(IS_UBUNTU_CORE ? "\tdirectory	\"" + SNAP_COMMON + "/named\";\n" : "\tdirectory	\"/var/named\";\n") //
+                .append(IS_UBUNTU_CORE ? "\tdump-file	\"" + SNAP_COMMON + "/named/data/cache_dump.db\";\n" : "\tdump-file	\"/var/named/data/cache_dump.db\";\n") //
+                .append(IS_UBUNTU_CORE ? "\tstatistics-file \"" + SNAP_COMMON + "/named/data/named_stats.txt\";\n" : "\tstatistics-file \"/var/named/data/named_stats.txt\";\n") //
+                .append(IS_UBUNTU_CORE ? "\tmemstatistics-file \"" + SNAP_COMMON + "/named/data/named_mem_stats.txt\";\n" : "\tmemstatistics-file \"/var/named/data/named_mem_stats.txt\";\n") //
                 .append("\tallow-query     { localhost; };\n") //
                 .append("\trecursion yes;\n") //
                 .append("\n") //
@@ -446,7 +455,7 @@ public class LinuxNamed {
                 .append("\tdnssec-lookaside auto;\n") //
                 .append("\n") //
                 .append("\t/* Path to ISC DLV key */\n") //
-                .append("\nbindkeys-file \"/etc/named.iscdlv.key\";\n") //
+                .append(IS_UBUNTU_CORE ? "\nbindkeys-file \"" + SNAP_COMMON + "/etc/named.iscdlv.key\";\n" : "\nbindkeys-file \"/etc/named.iscdlv.key\";\n") //
                 .append("};\n") //
                 .append("\n") //
                 .append("logging {\n") //

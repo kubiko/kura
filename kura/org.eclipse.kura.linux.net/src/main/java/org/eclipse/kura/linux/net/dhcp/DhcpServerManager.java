@@ -16,6 +16,7 @@ import java.io.File;
 import org.eclipse.kura.KuraErrorCode;
 import org.eclipse.kura.KuraException;
 import org.eclipse.kura.core.linux.util.LinuxProcessUtil;
+import org.eclipse.kura.linux.net.util.KuraConstants;
 import org.eclipse.kura.linux.net.util.LinuxNetworkUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +24,11 @@ import org.slf4j.LoggerFactory;
 public class DhcpServerManager {
 
     private static final Logger s_logger = LoggerFactory.getLogger(DhcpServerManager.class);
-
-    private static final String FILE_DIR = "/etc/";
-    private static final String PID_FILE_DIR = "/var/run/";
+    private static final boolean IS_UBUNTU_CORE = System.getProperty("kura.os.version").equals(KuraConstants.UbuntuCore.getImageName());
+    private static final String SNAP_COMMON = System.getProperty("kura.data.dir") + "/..";
+    private static final String SNAP_DATA = System.getProperty("kura.data.dir") + "/../../current";
+    private static final String FILE_DIR = IS_UBUNTU_CORE ? SNAP_COMMON + "/etc/" : "/etc/";
+    private static final String PID_FILE_DIR = IS_UBUNTU_CORE ? SNAP_DATA + "/run/" : "/var/run/";
     private static DhcpServerTool dhcpServerTool = DhcpServerTool.NONE;
 
     static {

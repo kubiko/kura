@@ -16,14 +16,18 @@ import org.eclipse.kura.KuraException;
 import org.eclipse.kura.core.linux.util.LinuxProcessUtil;
 import org.eclipse.kura.core.util.ProcessUtil;
 import org.eclipse.kura.core.util.SafeProcess;
+import org.eclipse.kura.linux.net.util.KuraConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class IptablesConfig {
 
     private static final Logger s_logger = LoggerFactory.getLogger(IptablesConfig.class);
-    public static final String FIREWALL_CONFIG_FILE_NAME = "/etc/sysconfig/iptables";
-    public static final String FIREWALL_TMP_CONFIG_FILE_NAME = "/tmp/iptables";
+    private static final boolean IS_UBUNTU_CORE = System.getProperty("kura.os.version").equals(KuraConstants.UbuntuCore.getImageName());
+    private static final String SNAP_COMMON = System.getProperty("kura.data.dir") + "/..";
+    private static final String SNAP_DATA = System.getProperty("kura.data.dir") + "/../../current";
+    public static final String FIREWALL_CONFIG_FILE_NAME = IS_UBUNTU_CORE ? SNAP_COMMON + "/etc/sysconfig/iptables" : "/etc/sysconfig/iptables";
+    public static final String FIREWALL_TMP_CONFIG_FILE_NAME = IS_UBUNTU_CORE ? SNAP_DATA + "/tmp/iptables" : "/tmp/iptables";
 
     private static final String ALLOW_ALL_TRAFFIC_TO_LOOPBACK = "-A INPUT -i lo -j ACCEPT";
     private static final String ALLOW_ONLY_INCOMING_TO_OUTGOING = "-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT";
