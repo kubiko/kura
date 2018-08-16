@@ -66,9 +66,11 @@ public class DhcpClientLeases {
                 continue;
             }
             List<IPAddress> routers = leaseBlock.getRouters();
-            for (IPAddress router : routers) {
-                if (!gateways.contains(router)) {
-                    gateways.add(router);
+            if (routers != null && !routers.isEmpty()) {
+                for (IPAddress router : routers) {
+                    if (!gateways.contains(router)) {
+                        gateways.add(router);
+                    }
                 }
             }
         }
@@ -92,9 +94,11 @@ public class DhcpClientLeases {
                 continue;
             }
             List<IPAddress> dnsServers = leaseBlock.getDnsServers();
-            for (IPAddress dnsServer : dnsServers) {
-                if (!servers.contains(dnsServer)) {
-                    servers.add(dnsServer);
+            if (dnsServers != null && !dnsServers.isEmpty()) {
+                for (IPAddress dnsServer : dnsServers) {
+                    if (!servers.contains(dnsServer)) {
+                        servers.add(dnsServer);
+                    }
                 }
             }
         }
