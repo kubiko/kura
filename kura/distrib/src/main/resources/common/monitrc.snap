@@ -1,0 +1,16 @@
+set daemon 5
+set logfile syslog facility log_daemon
+set statefile ${SNAP_COMMON}/var/.monit.state
+set idfile ${SNAP_COMMON}/run/.monit.id
+set pidfile ${SNAP_COMMON}/run/monit.pid
+check system localhost
+        if memory usage > 75% then alert
+        if cpu usage (user) > 80% for 1 cycles then alert
+        if cpu usage (system) > 80% for 1 cycles then alert
+        if cpu usage (user) > 90% for 30 cycles then unmonitor
+        if cpu usage (system) > 90% for 30 cycles then unmonitor
+        if loadavg(15min) greater than 4 for 5 cycle then alert
+check process kura with pidfile "${SNAP_COMMON}/run/kura.pid"
+   start program = "/usr/bin/snapctl start --enable ${SNAP_NAME}.kura"
+   stop  program = "/usr/bin/snapctl stop --disable ${SNAP_NAME}.kura"
+   if cpu usage > 80% for 5 cycles then alert

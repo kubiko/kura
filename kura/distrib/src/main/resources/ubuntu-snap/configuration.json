@@ -1,0 +1,29 @@
+{
+    "kura": {
+        "remote-configuration-properties": {
+            "description": "Remote Configuration Properties",
+            "file": "${SNAP_COMMON}/framework/kura.properties",
+            "config": "console.device.management.service.ignore=",
+            "default": "org.eclipse.kura.net.admin.NetworkConfigurationService,org.eclipse.kura.net.admin.FirewallConfigurationService"
+        },
+        "primary-network-interface": {
+                         "description": "primary network interface",
+                         "file": "${SNAP_COMMON}/framework/kura.properties",
+                         "config": "kura.primary.network.interface=",
+                         "default": "eth0"
+        },
+        "file-upload-in-memory-size-threshold": {
+                         "description": "file-upload-in-memory-size-threshold",
+                         "file": "${SNAP_COMMON}/framework/kura.properties",
+                         "config": "file.upload.in.memory.size.threshold=",
+                         "default": "10240"
+        }
+    },
+    "java": {
+        "java-memory": {
+            "description": "Memory settings passed to kura's java environment",
+            "env": "JAVA_MEMORY",
+            "default": "512m"
+        }
+    }
+}
