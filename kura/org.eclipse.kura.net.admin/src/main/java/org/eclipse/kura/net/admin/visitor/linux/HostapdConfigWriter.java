@@ -57,7 +57,9 @@ public class HostapdConfigWriter implements NetworkConfigurationVisitor {
     private static final String KURA_IEEE80211N = "KURA_IEEE80211N";
     private static final String KURA_WME_ENABLED = "KURA_WME_ENABLED";
     private static final String KURA_HW_MODE = "KURA_HW_MODE";
-    private static final String HOSTAPD_TMP_CONFIG_FILE = "/etc/hostapd.conf.tmp";
+    private static final String HOSTAPD_TMP_CONFIG_FILE = (System.getProperty("kura.data.snap.common") == null ?
+                  "/etc/hostapd.conf.tmp"
+                : System.getProperty("kura.data.snap.common") + "/etc/hostapd.conf.tmp" );
 
     private static HostapdConfigWriter instance;
     private CommandExecutorService executorService;
