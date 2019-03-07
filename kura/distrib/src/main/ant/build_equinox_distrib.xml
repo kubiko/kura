@@ -373,10 +373,125 @@ else
     echo "Failed to start Kura. It is already running ..." >> /var/log/kura-console.log
 fi]]>
 	</echo>
+	<echo file="${project.build.directory}/${build.output.name}/start_kura_snap.sh" append="false"><![CDATA[#!/bin/sh
+
+# Kura should be installed to the ${kura.install.dir} directory.
+export MALLOC_ARENA_MAX=1
+
+DIR=$(cd $(dirname $0)/..; pwd)
+cd $DIR
+
+# set up the configuration area
+mkdir -p /tmp/.kura/configuration
+cp ${SNAP_COMMON}/framework/config.ini /tmp/.kura/configuration/
+
+. $SNAP/bin/read-config
+
+KURA_RUNNING=`ps ax | grep java | grep "org.eclipse.osgi"`
+
+if [ -z "$KURA_RUNNING" ] ; then
+  rm ${SNAP_DATA}/run/kura.pid
+  echo $$$ > ${SNAP_DATA}/run/kura.pid
+  exec java -Xms${JAVA_MEMORY} -Xmx${JAVA_MEMORY} \
+        -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${SNAP_DATA}/log/kura-heapdump.hprof \
+        -XX:ErrorFile=${SNAP_DATA}/log/kura-error.log \
+        -XX:+IgnoreUnrecognizedVMOptions \
+        --add-modules=java.sql,java.xml,java.xml.bind \
+        -Dkura.os.version=${kura.os.version} \
+        -Dkura.arch=${kura.arch} \
+        -Dtarget.device=${target.device} \
+        -Declipse.ignoreApp=true \
+        -Dkura.home=${DIR} \
+        -Dkura.framework.config=${SNAP_COMMON}/framework \
+        -Dkura.user.config=${SNAP_COMMON}/user \
+        -Dkura.configuration=file:${SNAP_COMMON}/framework/kura.properties \
+        -Dkura.custom.configuration=file:${SNAP_COMMON}/user/kura_custom.properties \
+        -Dkura.packages=${SNAP_COMMON}/data/packages \
+        -Dkura.snapshots=${SNAP_COMMON}/user/snapshots \
+        -Dkura.style.dir=${SNAP_COMMON}/user/console/skin \
+        -Dkura.data=${SNAP_COMMON}/data \
+        -Dkura.data.dir=${SNAP_COMMON}/data \
+        -Dkura.data.snap.common=${SNAP_COMMON} \
+        -Dkura.data.snap.data=${SNAP_DATA} \
+        -Dkura.os.snap=${SNAP} \
+        -Dkura.os.snap.name=${SNAP_NAME} \
+        -Ddpa.configuration=${SNAP_COMMON}/conf/dpa.properties \
+        -Dlog4j.configurationFile=file:${SNAP_COMMON}/user/log4j.xml \
+        -Djava.security.policy=${DIR}/framework/jdk.dio.policy \
+        -Djdk.dio.registry=${DIR}/framework/jdk.dio.properties \
+        -Djdk.tls.trustNameService=true \
+        -Dosgi.console=5002 \
+        -Declipse.consoleLog=true \
+        -jar ${DIR}/plugins/org.eclipse.equinox.launcher_${org.eclipse.equinox.launcher.version}.jar \
+        -configuration /tmp/.kura/configuration
+
+else
+	echo "Failed to start Kura. It is already running ..."
+fi]]>
+</echo>
+<echo file="${project.build.directory}/${build.output.name}/start_kura_snap_debug.sh" append="false"><![CDATA[#!/bin/sh
+
+# Kura should be installed to the ${kura.install.dir} directory.
+export MALLOC_ARENA_MAX=1
+
+DIR=$(cd $(dirname $0)/..; pwd)
+cd $DIR
+
+# set up the configuration area
+mkdir -p /tmp/.kura/configuration
+cp ${SNAP_COMMON}/framework/config.ini /tmp/.kura/configuration/
+
+. $SNAP/bin/read-config
+
+KURA_RUNNING=`ps ax | grep java | grep "org.eclipse.osgi"`
+
+if [ -z "$KURA_RUNNING" ] ; then
+  rm ${SNAP_DATA}/run/kura.pid
+  echo $$$ > ${SNAP_DATA}/run/kura.pid
+  exec java -Xms${JAVA_MEMORY} -Xmx${JAVA_MEMORY} \
+        -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -Xloggc:${SNAP_DATA}/log/kura-gc.log \
+        -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=100M \
+        -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${SNAP_DATA}/log/kura-heapdump.hprof \
+        -XX:ErrorFile=${SNAP_DATA}/log/kura-error.log \
+        -XX:+IgnoreUnrecognizedVMOptions \
+        --add-modules=java.sql,java.xml,java.xml.bind \
+        -Dkura.os.version=${kura.os.version} \
+        -Dkura.arch=${kura.arch} \
+        -Dtarget.device=${target.device} \
+        -Declipse.ignoreApp=true \
+        -Dkura.home=${DIR} \
+        -Dkura.framework.config=${SNAP_COMMON}/framework \
+        -Dkura.user.config=${SNAP_COMMON}/user \
+        -Dkura.configuration=file:${SNAP_COMMON}/framework/kura.properties \
+        -Dkura.custom.configuration=file:${SNAP_COMMON}/user/kura_custom.properties \
+        -Dkura.packages=${SNAP_COMMON}/data/packages \
+        -Dkura.snapshots=${SNAP_COMMON}/user/snapshots \
+        -Dkura.style.dir=${SNAP_COMMON}/user/console/skin \
+        -Dkura.data=${SNAP_COMMON}/data \
+        -Dkura.data.dir=${SNAP_COMMON}/data \
+        -Dkura.data.snap.common=${SNAP_COMMON} \
+        -Dkura.data.snap.data=${SNAP_DATA} \
+        -Dkura.os.snap=${SNAP} \
+        -Dkura.os.snap.name=${SNAP_NAME} \
+        -Ddpa.configuration=${SNAP_COMMON}/conf/dpa.properties \
+        -Dlog4j.configurationFile=file:${SNAP_COMMON}/user/log4j.xml \
+        -Djava.security.policy=${DIR}/framework/jdk.dio.policy \
+        -Djdk.dio.registry=${DIR}/framework/jdk.dio.properties \
+        -Djdk.tls.trustNameService=true \
+        -Dosgi.console=5002 \
+        -Declipse.consoleLog=true \
+        -jar ${DIR}/plugins/org.eclipse.equinox.launcher_${org.eclipse.equinox.launcher.version}.jar \
+        -configuration /tmp/.kura/configuration
+else
+		echo "Failed to start Kura. It is already running ..."
+fi]]>
+</echo>
 
 		<!-- Populate parameters -->
 		<copy file="src/main/resources/${build.name}/kura_install.sh"
               tofile="${project.build.directory}/${build.output.name}/kura_install.sh" />
+                <copy file="src/main/resources/${build.name}/kura_upgrade.sh"
+              tofile="${project.build.directory}/${build.output.name}/kura_upgrade.sh" />
 		<copy file="src/main/resources/common/kura.init.yocto"
               tofile="${project.build.directory}/${build.output.name}/kura.init.yocto"
               failonerror="false" />
@@ -387,6 +502,7 @@ fi]]>
               tofile="${project.build.directory}/${build.output.name}/kura.service"
         	  failonerror="false" />
 		<replaceregexp file="${project.build.directory}/${build.output.name}/kura_install.sh" match="INSTALL_DIR=.*" replace="INSTALL_DIR=${kura.install.dir}" />
+                <replaceregexp file="${project.build.directory}/${build.output.name}/kura_upgrade.sh" match="INSTALL_DIR=.*" replace="INSTALL_DIR=${kura.upgrade.dir}" />
 		<replaceregexp file="${project.build.directory}/${build.output.name}/kura.init.yocto" match="INSTALL_DIR=.*" replace="INSTALL_DIR=${kura.install.dir}" />
 		<replaceregexp file="${project.build.directory}/${build.output.name}/kura.init.raspbian" match="INSTALL_DIR=.*" replace="INSTALL_DIR=${kura.install.dir}" />
 		<replaceregexp file="${project.build.directory}/${build.output.name}/kura.service" match="INSTALL_DIR" replace="${kura.install.dir}" />
@@ -413,9 +529,15 @@ fi]]>
 			<zipfileset file="${project.build.directory}/${build.output.name}/kura_install.sh"
                         prefix="${build.output.name}/${install.folder}/" />
 
+                        <zipfileset file="${project.build.directory}/${build.output.name}/kura_upgrade.sh"
+                        prefix="${build.output.name}/${install.folder}/" filemode="777" />
+
 			<zipfileset file="src/main/resources/${build.name}/kuranet.conf"
                         prefix="${build.output.name}/${install.folder}/" />
-
+			<zipfileset file="src/main/resources/${build.name}/00-default-nm-renderer.yaml"
+                        prefix="${build.output.name}/${install.folder}/" />
+			<zipfileset file="src/main/resources/${build.name}/configure-netplan.sh"
+                        prefix="${build.output.name}/${install.folder}/" filemode="777" />
 			<zipfileset file="${project.build.directory}/${build.output.name}/kura.init.yocto"
                         prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="${project.build.directory}/${build.output.name}/kura.init.raspbian"
@@ -431,6 +553,8 @@ fi]]>
 			<zipfileset file="src/main/resources/common/monit.init.raspbian"
                         prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/common/monitrc.raspbian"
+                        prefix="${build.output.name}/${install.folder}" filemode="700" />
+			<zipfileset file="src/main/resources/common/monitrc.snap"
                         prefix="${build.output.name}/${install.folder}" />
             <zipfileset file="src/main/resources/${build.name}/kura-tmpfiles.conf"
                         prefix="${build.output.name}/${install.folder}" />
@@ -460,6 +584,8 @@ fi]]>
                         prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/common/named/named.conf"
                         prefix="${build.output.name}/${install.folder}" />
+			<zipfileset file="src/main/resources/common/named/named.conf.snap"
+                        prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/common/named/named.ca"
                         prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/common/named/named.rfc1912.zones"
@@ -487,6 +613,8 @@ fi]]>
                         prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/common/network.interfaces.ubuntu"
                         prefix="${build.output.name}/${install.folder}" />
+                        <zipfileset file="src/main/resources/common/network.interfaces.snap"
+                        prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/common/ifdown-local"
                         prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/common/ifup-local"
@@ -494,6 +622,8 @@ fi]]>
 			<zipfileset file="src/main/resources/common/ifup-local.debian"
                         prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/common/ifup-local.raspbian"
+                        prefix="${build.output.name}/${install.folder}" />
+                        <zipfileset file="src/main/resources/common/ifup-local.snap"
                         prefix="${build.output.name}/${install.folder}" />
 
 			<zipfileset file="${project.build.directory}/${build.output.name}/selinuxKura.pp"
@@ -505,6 +635,10 @@ fi]]>
                         fullpath="${build.output.name}/${binary.folder}/start_kura_debug.sh" filemode="777" />
 			<zipfileset file="${project.build.directory}/${build.output.name}/start_kura_background.sh"
                         fullpath="${build.output.name}/${binary.folder}/start_kura_background.sh" filemode="777" />
+			<zipfileset file="${project.build.directory}/${build.output.name}/start_kura_snap.sh"
+                        fullpath="${build.output.name}/${binary.folder}/start_kura_snap.sh" filemode="777" />
+			<zipfileset file="${project.build.directory}/${build.output.name}/start_kura_snap_debug.sh"
+                        fullpath="${build.output.name}/${binary.folder}/start_kura_snap_debug.sh" filemode="777" />
 
 			<zipfileset file="RELEASE_NOTES.txt"
                         prefix="${build.output.name}/${framework.config.folder}/" />
