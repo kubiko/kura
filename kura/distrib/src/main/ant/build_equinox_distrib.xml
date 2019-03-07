@@ -533,7 +533,7 @@ fi]]>
                         prefix="${build.output.name}/${user.config.folder}/" />
 
 			<zipfileset file="${project.build.directory}/${build.output.name}/kura_install.sh"
-                        prefix="${build.output.name}/${install.folder}/" />
+                        prefix="${build.output.name}/${install.folder}/" filemode="777" />
 
 			<zipfileset file="${project.build.directory}/${build.output.name}/kura_upgrade.sh"
                         prefix="${build.output.name}/${install.folder}/" filemode="777" />
@@ -551,19 +551,19 @@ fi]]>
 			<zipfileset file="src/main/resources/${build.name}/configure-netplan.sh"
                         prefix="${build.output.name}/${install.folder}/" filemode="777" />
 			<zipfileset file="${project.build.directory}/${build.output.name}/kura.init.yocto"
-                        prefix="${build.output.name}/${install.folder}" />
+                        prefix="${build.output.name}/${install.folder}" filemode="777" />
 			<zipfileset file="${project.build.directory}/${build.output.name}/kura.init.raspbian"
-                        prefix="${build.output.name}/${install.folder}" />
+                        prefix="${build.output.name}/${install.folder}" filemode="777" />
 			<zipfileset file="${project.build.directory}/${build.output.name}/kura.service"
                         prefix="${build.output.name}/${install.folder}" />
 			<zipfileset file="src/main/resources/${build.name}/recover_default_config.init"
-                        prefix="${build.output.name}/${install.folder}" />
+                        prefix="${build.output.name}/${install.folder}" filemode="777" />
 			<zipfileset file="src/main/resources/${build.name}/firewall.init"
-                        prefix="${build.output.name}/${install.folder}" />
+                        prefix="${build.output.name}/${install.folder}" filemode="777" />
 			<zipfileset file="src/main/resources/${build.name}/iptables.init"
-                        prefix="${build.output.name}/${install.folder}" />
+                        prefix="${build.output.name}/${install.folder}" filemode="777" />
 			<zipfileset file="src/main/resources/common/monit.init.raspbian"
-                        prefix="${build.output.name}/${install.folder}" />
+                        prefix="${build.output.name}/${install.folder}" filemode="777" />
 			<zipfileset file="src/main/resources/common/monitrc.raspbian"
                         prefix="${build.output.name}/${install.folder}" filemode="700" />
 			<zipfileset file="src/main/resources/common/monitrc.snap"
