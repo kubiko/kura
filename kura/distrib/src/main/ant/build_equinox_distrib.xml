@@ -209,6 +209,15 @@
 			</and>
 		</condition>
 
+		<condition property="is.snapctl">
+			<and>
+				<contains string="${service.manager}" substring="snapctl"/>
+				<not>
+					<contains string="${build.name}" substring="-nn"/>
+				</not>
+			</and>
+		</condition>
+
 		<condition property="is.debian">
 			<and>
 				<contains string="${os.base}" substring="debian" />
@@ -230,6 +239,7 @@
 		<antcall target="linux-debian-config" />
 		<antcall target="linux-redhat-config" />
 		<antcall target="linux-systemd-config" />
+		<antcall target="linux-snapctl-config" />
 
 
 		<!-- Add mToolkit to config.ini -->
@@ -691,6 +701,7 @@ fi]]>
 		<antcall target="linux-debian-jars" />
 		<antcall target="linux-redhat-jars" />
 		<antcall target="linux-systemd-jars" />
+		<antcall target="linux-snapctl-jars" />
 		<antcall target="tinyb-jars" />
 
 		<echo message="Building Kura Distribution for ${build.name}-jars..." />
@@ -1485,6 +1496,13 @@ fi]]>
 		</propertyfile>
 	</target>
 
+	<target name="linux-snapctl-config" if="is.snapctl" depends="linux-config">
+		<propertyfile file="${project.build.directory}/${build.output.name}/config.ini">
+			<entry key="osgi.bundles" operation="+"
+					value=", reference:file:${kura.install.dir}/${kura.symlink}/${plugins.folder}/org.eclipse.kura.linux.snapctl.provider_${org.eclipse.kura.linux.snapctl.provider.version}.jar@4" />
+		</propertyfile>
+	</target>
+
 	<target name="emulator-jars" if="is.nn">
 		<zip destfile="${project.build.directory}/${build.output.name}.zip"
 			update="true">
@@ -1542,6 +1560,13 @@ fi]]>
 			<zipfileset
 				file="${project.build.directory}/plugins/org.eclipse.kura.linux.systemd.provider_${org.eclipse.kura.linux.systemd.provider.version}.jar"
 				prefix="${build.output.name}/${plugins.folder}" />
+		</zip>
+	</target>
+
+	<target name="linux-snapctl-jars" if="is.snapctl" depends="linux-jars">
+		<zip destfile="${project.build.directory}/${build.output.name}.zip" update="true">
+			<zipfileset file="${project.build.directory}/plugins/org.eclipse.kura.linux.snapctl.provider_${org.eclipse.kura.linux.snapctl.provider.version}.jar"
+                        prefix="${build.output.name}/${plugins.folder}" />
 		</zip>
 	</target>
 
