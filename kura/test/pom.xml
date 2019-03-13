@@ -182,7 +182,7 @@ Copyright (c) 2016, 2018 Eurotech and/or its affiliates and others
                 <groupId>org.eclipse.tycho</groupId>
                 <artifactId>target-platform-configuration</artifactId>
                 <configuration>
-                    <argLine>-consoleLog</argLine>
+                    <argLine>-consoleLog -Dhttp.proxyHost=10.10.10.1 -Dhttp.proxyPort=8222 -Dhttps.proxyHost=10.10.10.1 -Dhttps.proxyPort=8222</argLine>
                     <resolver>p2</resolver>
                     <dependency-resolution>
                         <extraRequirements>
