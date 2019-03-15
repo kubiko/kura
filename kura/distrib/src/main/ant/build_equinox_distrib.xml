@@ -398,7 +398,7 @@ if [ -z "$KURA_RUNNING" ] ; then
         -XX:+IgnoreUnrecognizedVMOptions \
         --add-modules=java.sql,java.xml,java.xml.bind \
         -Dkura.os.version=${kura.os.version} \
-        -Dkura.arch=${kura.arch} \
+        -Dkura.arch=${KURA_ARCH} \
         -Dtarget.device=${target.device} \
         -Declipse.ignoreApp=true \
         -Dkura.home=${DIR} \
@@ -456,7 +456,7 @@ if [ -z "$KURA_RUNNING" ] ; then
         -XX:+IgnoreUnrecognizedVMOptions \
         --add-modules=java.sql,java.xml,java.xml.bind \
         -Dkura.os.version=${kura.os.version} \
-        -Dkura.arch=${kura.arch} \
+        -Dkura.arch=${KURA_ARCH} \
         -Dtarget.device=${target.device} \
         -Declipse.ignoreApp=true \
         -Dkura.home=${DIR} \
@@ -1470,6 +1470,8 @@ fi]]>
 		<propertyfile file="${project.build.directory}/${build.output.name}/config.ini">
 			<entry key="osgi.bundles" operation="+"
 					value=", reference:file:${kura.install.dir}/${kura.symlink}/${plugins.folder}/org.eclipse.kura.linux.snapctl.provider_${org.eclipse.kura.linux.snapctl.provider.version}.jar@4" />
+			<entry key="osgi.bundles" operation="+"
+								 value=", reference:file:${kura.install.dir}/${kura.symlink}/${plugins.folder}/org.eclipse.kura.linux.usb.*_${org.eclipse.kura.linux.usb.version}.jar@4" />
 		</propertyfile>
 	</target>
 
@@ -1523,7 +1525,14 @@ fi]]>
 		<zip destfile="${project.build.directory}/${build.output.name}.zip" update="true">
 			<zipfileset file="${project.build.directory}/plugins/org.eclipse.kura.linux.snapctl.provider_${org.eclipse.kura.linux.snapctl.provider.version}.jar"
                         prefix="${build.output.name}/${plugins.folder}" />
+			<zipfileset file="${project.build.directory}/plugins/org.eclipse.kura.linux.usb.*_${org.eclipse.kura.linux.usb.version}.jar"
+												prefix="${build.output.name}/${plugins.folder}" />
 		</zip>
+		<condition property="is.tinyb.snapshot" value="">
+				<contains string="${tinyb.version}" substring="SNAPSHOT"/>
+		</condition>
+	  <antcall target="tinyb-snapshot-jars-all" />
+	  <antcall target="tinyb-no-snapshot-jars-all" />
 	</target>
 
 	<target name="tinyb-jars">
@@ -1547,9 +1556,31 @@ fi]]>
         </zip>
     </target>
 
+		<target name="tinyb-snapshot-jars-all" if="is.tinyb.snapshot">
+        <zip destfile="${project.build.directory}/${build.output.name}.zip" update="true">
+            <mappedresources>
+                <fileset dir="../target-definition/common/repository/plugins" includes="tinyb.*_*.jar" />
+                <globmapper from="*.SNAPSHOT.jar" to="${build.output.name}/${plugins.folder}/*-SNAPSHOT.jar" />
+            </mappedresources>
+            <mappedresources>
+                <fileset dir="../target-definition/common/repository/plugins" includes="tinyb_*.jar" />
+                <globmapper from="*.SNAPSHOT.jar" to="${build.output.name}/${plugins.folder}/*-SNAPSHOT.jar" />
+            </mappedresources>
+        </zip>
+    </target>
+
 	<target name="tinyb-no-snapshot-jars" unless="is.tinyb.snapshot">
 		<zip destfile="${project.build.directory}/${build.output.name}.zip" update="true">
             <zipfileset file="../target-definition/common/repository/plugins/tinyb.${native.tag}_${tinyb.version}.jar"
+                prefix="${build.output.name}/${plugins.folder}" />
+            <zipfileset file="../target-definition/common/repository/plugins/tinyb_${tinyb.version}.jar"
+                prefix="${build.output.name}/${plugins.folder}" />
+	    </zip>
+	</target>
+
+	<target name="tinyb-no-snapshot-jars-all" unless="is.tinyb.snapshot">
+		<zip destfile="${project.build.directory}/${build.output.name}.zip" update="true">
+            <zipfileset file="../target-definition/common/repository/plugins/tinyb.*_${tinyb.version}.jar"
                 prefix="${build.output.name}/${plugins.folder}" />
             <zipfileset file="../target-definition/common/repository/plugins/tinyb_${tinyb.version}.jar"
                 prefix="${build.output.name}/${plugins.folder}" />
