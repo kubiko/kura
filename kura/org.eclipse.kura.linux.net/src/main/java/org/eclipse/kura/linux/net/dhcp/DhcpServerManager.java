@@ -67,6 +67,7 @@ public class DhcpServerManager {
 
     public boolean enable(String interfaceName) throws KuraException {
         // Check if DHCP server is running
+        logger.error("DhcpServerManager:enable<<< {}", interfaceName);
         if (isRunning(interfaceName)) {
             // If so, disable it
             logger.error("DHCP server is already running for {}, bringing it down...", interfaceName);
@@ -81,7 +82,7 @@ public class DhcpServerManager {
                 logger.debug("DHCP server started.");
                 return true;
             } else {
-                logger.warning("Can't start DHCP server, exit value {}", (Integer) status.getExitStatus().getExitValue());
+                logger.warn("Can't start DHCP server, exit value {}", status.getExitStatus().getExitValue().toString());
             }
         } else {
             logger.error("Can't start DHCP server, config file does not exist: {}", configFile.getAbsolutePath());
@@ -142,6 +143,7 @@ public class DhcpServerManager {
             sb.append(interfaceName);
             sb.append(".pid");
         }
+        logger.error("OK: DhcpServerManager:getPidFilename: >>> {}", sb.toString());
         return sb.toString();
     }
 
@@ -158,7 +160,10 @@ public class DhcpServerManager {
             command.add("-f");
             command.add("-S");
             command.add(DhcpServerManager.getConfigFilename(interfaceName));
+        } else {
+          logger.error("OK: DhcpServerManager:formDhcpdCommand: undefined dhcpServerTool: {}", dhcpServerTool);
         }
+        logger.error("OK: DhcpServerManager:formDhcpdCommand: >>> {} {}", interfaceName, command.toString());
         return command.toArray(new String[0]);
     }
 }
