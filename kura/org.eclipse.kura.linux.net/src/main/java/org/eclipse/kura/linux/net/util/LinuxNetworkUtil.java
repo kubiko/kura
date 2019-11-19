@@ -245,7 +245,10 @@ public class LinuxNetworkUtil {
 
     public static boolean toolExists(String tool) {
         boolean ret = false;
-        final String[] searchFolders = new String[] { "/sbin/", "/usr/sbin/", "/bin/" };
+        String snap = System.getProperty("kura.os.snap");
+        final String[] searchFolders = snap == null
+            ? new String[] { "/sbin/", "/usr/sbin/", "/bin/" }
+            : new String[] { "/sbin/", "/usr/sbin/", "/bin/", snap + "/sbin/", snap + "/usr/sbin/", snap + "/bin/", snap + "/usr/bin/" };
 
         if (TOOLS.contains(tool)) {
             ret = true;
