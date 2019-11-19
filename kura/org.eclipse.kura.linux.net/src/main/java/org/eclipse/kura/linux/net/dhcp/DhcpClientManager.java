@@ -25,7 +25,10 @@ public class DhcpClientManager {
     private static final Logger logger = LoggerFactory.getLogger(DhcpClientManager.class);
 
     private static DhcpClientTool dhcpClientTool = DhcpClientTool.NONE;
-    private static final String PID_FILE_DIR = "/var/run";
+    private static final String PID_FILE_DIR = (System.getProperty("kura.data.snap.data") == null ?
+                        "/var/run"
+                      : System.getProperty("kura.data.snap.data") + "/var/run");
+
 
     static {
         dhcpClientTool = getTool();
