@@ -81,8 +81,10 @@ public class DhcpServerManager {
                 logger.debug("DHCP server started.");
                 return true;
             } else {
-                logger.debug("Can't start DHCP server, config file does not exist: {}", configFile.getAbsolutePath());
+                logger.warning("Can't start DHCP server, exit value {}", (Integer) status.getExitStatus().getExitValue());
             }
+        } else {
+            logger.error("Can't start DHCP server, config file does not exist: {}", configFile.getAbsolutePath());
         }
 
         return false;
