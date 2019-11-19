@@ -31,8 +31,13 @@ public class DhcpServerManager {
 
     private static final Logger logger = LoggerFactory.getLogger(DhcpServerManager.class);
 
-    private static final String FILE_DIR = "/etc/";
-    private static final String PID_FILE_DIR = "/var/run/";
+    private static final String FILE_DIR = (System.getProperty("kura.data.snap.common") == null ?
+                        "/etc/"
+                      : System.getProperty("kura.data.snap.common") + "/etc/");
+    private static final String PID_FILE_DIR = (System.getProperty("kura.data.snap.data") == null ?
+                        "/var/run/"
+                      : System.getProperty("kura.data.snap.data") + "/var/run/");
+
     private static DhcpServerTool dhcpServerTool = DhcpServerTool.NONE;
     private CommandExecutorService executorService;
 
