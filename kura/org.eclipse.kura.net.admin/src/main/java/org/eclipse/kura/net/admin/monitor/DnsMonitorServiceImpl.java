@@ -322,6 +322,10 @@ public class DnsMonitorServiceImpl implements DnsMonitorService, EventHandler {
 
     private void setDnsServers(Set<IPAddress> newServers) {
         LinuxDns linuxDns = this.dnsUtil;
+        if (linuxDns == null) {
+          logger.warn("OK:We are trying to set DndServer while not being activated first");
+          linuxDns = LinuxDns.getInstance();
+        }
         Set<IPAddress> currentServers = linuxDns.getDnServers();
 
         if (newServers == null || newServers.isEmpty()) {
@@ -374,6 +378,10 @@ public class DnsMonitorServiceImpl implements DnsMonitorService, EventHandler {
         String interfaceName = netInterfaceConfig.getName();
         logger.trace("Getting dns servers for {}", interfaceName);
         LinuxDns linuxDns = this.dnsUtil;
+        if (linuxDns == null) {
+          logger.warn("OK:We are trying to set DndServer while not being activated first");
+          linuxDns = LinuxDns.getInstance();
+        }
         LinkedHashSet<IPAddress> serverList = new LinkedHashSet<>();
 
         NetConfigIP4 netConfigIP4 = ((AbstractNetInterface<?>) netInterfaceConfig).getIP4config();
